@@ -1,3 +1,3 @@
-# SRC
+# src
 
 Source code for simulation.
