@@ -3,9 +3,15 @@ Author: Daniel Nichols
 """
 
 
-class elevator:
-    def __init__(self):
+class Elevator:
+    """
+    Elevator class.
+    """
+
+    def __init__(self, name, acceleration, speed):
         """
         inits the elevator.
         """
-        pass
+        self.name = name
+        self.acceleration = acceleration
+        self.speed = speed

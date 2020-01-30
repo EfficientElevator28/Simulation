@@ -10,7 +10,7 @@ class Building:
     Building class.
     """
 
-    def __init__(self, name, elevators):
+    def __init__(self, name, elevators, n_floors):
         """
         Creates a building object.
 
@@ -21,6 +21,13 @@ class Building:
 
         self.name = name
         self.elevators = elevators
+        self.n_floors = n_floors
+
+    def get_n_elevators(self):
+        """
+        Get the total number of elevators.
+        """
+        return len(self.elevators)
 
     def reset():
         """
