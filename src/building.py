@@ -10,7 +10,7 @@ class Building:
     Building class.
     """
 
-    def __init__(self, name, elevators, n_floors, floor_dist):
+    def __init__(self, name, elevators, n_floors, floor_dist=4.5, elev_height=2.5):
         """
         Creates a building object.
 
@@ -25,6 +25,7 @@ class Building:
         self.elevators = elevators
         self.n_floors = n_floors
         self.floor_dist = floor_dist
+        self.elev_height = elev_height
 
     def get_n_elevators(self):
         """
