@@ -26,6 +26,7 @@ class Building:
         self.n_floors = n_floors
         self.floor_dist = floor_dist
         self.elev_height = elev_height
+        # TODO: create a list of floors to add people to when they first arrive and are waiting for an elevator
 
     def get_n_elevators(self):
         """
@@ -39,3 +40,6 @@ class Building:
         """
         # TODO
         pass
+
+    # TODO: Create a function that adds a person to a floor where they wait
+    # def add_waiting_person(self, person):

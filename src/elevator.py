@@ -9,7 +9,7 @@ class Elevator:
     Elevator class.
     """
 
-    def __init__(self, name, max_velocity=2.5, max_acc=1, jerk=0, speed=0, avg_boarding_time=5, max_riders=10,
+    def __init__(self, building, name, max_velocity=2.5, max_acc=1, jerk=0, speed=0, avg_boarding_time=5, max_riders=10,
                  init_position=0):
         """
         inits the elevator.
@@ -25,6 +25,7 @@ class Elevator:
         position -- distance (in meters) above the base of floor 1; used by simulation for positioning
         """
         self.name = name
+        self.building = building
         self.speed = speed
         self.avg_boarding_time = avg_boarding_time
         self.max_velocity = max_velocity
@@ -33,6 +34,10 @@ class Elevator:
         self.max_riders = max_riders
         self.position = init_position
         self.state = ElevatorState.NO_ACTION
+        # TODO: Elevator should have a list of floors it is requested to stop on to determine order of events
+        #       For people inside the elevator, their destination should be added to this list when they are added
+        #       For people waiting for an elevator, the building should decide which elevator is best situated to pick them up,
+        #               and add their floor to that elevator's requests.
 
         self.riders = []
 
@@ -46,6 +51,7 @@ class Elevator:
             return -1
 
         self.riders.append(rider)
+        # TODO: See todo in __init__ - rider destination should be added to the list of requested stops
         return len(self.riders)-1
 
     def remove_rider(self, rider):
