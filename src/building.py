@@ -3,6 +3,7 @@ Author: Daniel Nichols
 building.py
 Defines a Building class, which contains elevators.
 """
+from src.floor import Floor
 
 
 class Building:
@@ -26,7 +27,9 @@ class Building:
         self.n_floors = n_floors
         self.floor_dist = floor_dist
         self.elev_height = elev_height
-        # TODO: create a list of floors to add people to when they first arrive and are waiting for an elevator
+        # TODO: create a list of floors to add people to when they first arrive and are waiting for an elevator.
+        #  In progress.
+        self.floors = [Floor(floor_num) for floor_num in range(0, n_floors)]
 
     def get_n_elevators(self):
         """

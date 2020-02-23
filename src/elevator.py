@@ -9,7 +9,7 @@ class Elevator:
     Elevator class.
     """
 
-    def __init__(self, building, name, max_velocity=2.5, max_acc=1, jerk=0, speed=0, avg_boarding_time=5, max_riders=10,
+    def __init__(self, name, max_velocity=2.5, max_acc=1, jerk=0, speed=0, avg_boarding_time=5, max_riders=10,
                  init_position=0):
         """
         inits the elevator.
@@ -25,7 +25,8 @@ class Elevator:
         position -- distance (in meters) above the base of floor 1; used by simulation for positioning
         """
         self.name = name
-        self.building = building
+        # self.building = building -- chicken in egg kind of:
+        # (building takes elevators as param, elevator takes building as param)
         self.speed = speed
         self.avg_boarding_time = avg_boarding_time
         self.max_velocity = max_velocity
