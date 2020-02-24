@@ -24,6 +24,11 @@ class Visualization:
     color_elevator_odd_2 = (255, 102, 0, 20) * 4
     background_color = (.95, .95, .95, 1)
 
+    color_green = (62, 148, 72)  # 0, 230, 0
+    color_red = (148, 62, 76)  # 255, 51, 0
+    color_yellow = (148, 148, 62)  # 255, 255, 0
+    color_gray = (128, 128, 128)
+
     def __init__(self, building):
         """
         Creates the pyglet visualization components for seeing elevator movements
@@ -41,6 +46,8 @@ class Visualization:
         self.elev_section_max_x = 1150
         self.elev_section_max_y = 650
         self.dist_bt_elev_ratio = .8
+        self.floor_section_min_x = 575
+        self.floor_section_max_x = 725
 
         # Determine elevator/shaft coordinates based on above parameters
         self.elevator_component_positions()
@@ -76,9 +83,11 @@ class Visualization:
         elevator_floors_batch = self.draw_elevator_floors()
         elevator_shafts_batch = self.draw_elevator_shafts()
         elevators_batch = self.draw_elevators()
+        floor_batch = self.draw_floor_information()
         elevator_floors_batch.draw()
         elevator_shafts_batch.draw()
         elevators_batch.draw()
+        floor_batch.draw()
 
         self.pyglet_window.flip()
 
@@ -203,19 +212,15 @@ class Visualization:
                     elev_min_x, elev_max_y)
         rect_left = (elev_min_x, elev_min_y, elev_min_x + border_size, elev_min_y, elev_min_x + border_size, elev_max_y,
                      elev_min_x, elev_max_y)
-        color_green = (62, 148, 72) * 4  # 0, 230, 0
-        color_red = (148, 62, 76) * 4  # 255, 51, 0
-        color_yellow = (148, 148, 62) * 4  # 255, 255, 0
-        color_gray = (128, 128, 128) * 4
 
         if elevator.state == ElevatorState.NO_ACTION:
-            self.add_rect_solid_outline(batch, rect_bottom, rect_right, rect_top, rect_left, color_gray)
+            self.add_rect_solid_outline(batch, rect_bottom, rect_right, rect_top, rect_left, self.color_gray * 4)
         elif elevator.state == ElevatorState.LOADING_UNLOADING:
-            self.add_rect_solid_outline(batch, rect_bottom, rect_right, rect_top, rect_left, color_yellow)
+            self.add_rect_solid_outline(batch, rect_bottom, rect_right, rect_top, rect_left, self.color_yellow * 4)
         elif elevator.state == ElevatorState.UP:
-            self.add_rect_solid_outline(batch, rect_bottom, rect_right, rect_top, rect_left, color_green)
+            self.add_rect_solid_outline(batch, rect_bottom, rect_right, rect_top, rect_left, self.color_green * 4)
         elif elevator.state == ElevatorState.DOWN:
-            self.add_rect_solid_outline(batch, rect_bottom, rect_right, rect_top, rect_left, color_red)
+            self.add_rect_solid_outline(batch, rect_bottom, rect_right, rect_top, rect_left, self.color_red * 4)
 
     @staticmethod
     def add_rect_solid_outline(batch, rect_bottom, rect_right, rect_top, rect_left, color_rgb):
@@ -223,6 +228,61 @@ class Visualization:
         batch.add(4, pyglet.gl.GL_QUADS, None, ('v2f', rect_right), ('c3B', color_rgb))
         batch.add(4, pyglet.gl.GL_QUADS, None, ('v2f', rect_top), ('c3B', color_rgb))
         batch.add(4, pyglet.gl.GL_QUADS, None, ('v2f', rect_left), ('c3B', color_rgb))
+
+    # x coordinate region defined by floor_section_min_x/floor_section_max_x and y coordinate region defined by
+    # elev_section_min_y/elev_section_max_y. The placement of the text (height) is determined by the tuples in
+    # pos_elevators; the y-coor will be the middle of the 2nd and 4th element of the tuple for the floor.
+    def draw_floor_information(self):
+        batch = pyglet.graphics.Batch()
+
+        # Column for up button pressed, down button pressed, and number of people waiting
+        x_total_range = self.floor_section_max_x - self.floor_section_min_x
+        people_waiting_column_x = self.floor_section_min_x + (x_total_range / 6)
+        up_button_column_x = self.floor_section_min_x + (x_total_range / 3) + (x_total_range / 6)
+        down_button_column_x = self.floor_section_min_x + (x_total_range / 3) * 2 + (x_total_range / 6)
+
+        # Up/down arrow coordinate offsets
+        arrow_offset_y = 5
+        arrow_offset_x = 5
+        text_offset_y = 3
+        label_offset_y = 35
+
+        # For each floor, add the number each of the above described columns
+        for i in range(0, self.n_floors):
+            y_range = self.elev_section_max_y - self.elev_section_min_y
+            y_floor_dist = y_range / self.n_floors
+
+            min_y_floor = self.pos_elevators[0][1]
+            max_y_top_of_elev = self.pos_elevators[0][3]
+            middle_y = (min_y_floor + max_y_top_of_elev) / 2 + i * y_floor_dist
+
+            pyglet.text.Label(str(len(self.building.floors[i].people_waiting)), font_name='Times New Roman',
+                              font_size=12, x=people_waiting_column_x, y=middle_y + text_offset_y, anchor_x='center',
+                              anchor_y='center', batch=batch, color=(0, 0, 0, 255))
+            if self.building.floors[i].up_pressed:
+                batch.add(3, pyglet.gl.GL_TRIANGLES, None,
+                          ('v2f', (up_button_column_x - arrow_offset_x, middle_y - arrow_offset_y,
+                                   up_button_column_x + arrow_offset_x, middle_y - arrow_offset_y,
+                                   up_button_column_x, middle_y + arrow_offset_y)), ('c3B', self.color_green * 3))
+            if self.building.floors[i].down_pressed:
+                batch.add(3, pyglet.gl.GL_TRIANGLES, None,
+                          ('v2f', (down_button_column_x + arrow_offset_x, middle_y + arrow_offset_y,
+                                   down_button_column_x - arrow_offset_x, middle_y + arrow_offset_y,
+                                   down_button_column_x, middle_y - arrow_offset_y)), ('c3B', self.color_red * 3))
+
+            # Add labels for the columns - WAITING, UP, DOWN
+            if i == self.n_floors - 1:
+                pyglet.text.Label("WAITING", font_name='Times New Roman', font_size=12, x=people_waiting_column_x,
+                                  y=middle_y + text_offset_y + label_offset_y, anchor_x='center', anchor_y='center',
+                                  batch=batch, color=(0, 0, 0, 255))
+                pyglet.text.Label("UP", font_name='Times New Roman', font_size=12, x=up_button_column_x,
+                                  y=middle_y + text_offset_y + label_offset_y, anchor_x='center', anchor_y='center',
+                                  batch=batch, color=(0, 0, 0, 255))
+                pyglet.text.Label("DOWN", font_name='Times New Roman', font_size=12, x=down_button_column_x,
+                                  y=middle_y + text_offset_y + label_offset_y, anchor_x='center', anchor_y='center',
+                                  batch=batch, color=(0, 0, 0, 255))
+
+        return batch
 
 
 def visualization_test_main():
