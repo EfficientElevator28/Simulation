@@ -3,6 +3,9 @@ author: Daniel Nichols
 """
 
 def default_step_func(cur_building):
+    """
+    A default version of the step function.
+    """
 
     for e in cur_building.elevators:
         # step the current elevator e
