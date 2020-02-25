@@ -4,6 +4,7 @@ Person.py
 Defines the Person class
 """
 
+
 class Person:
     """
     Person Class
@@ -21,7 +22,7 @@ class Person:
         self.floor = floor
         self.destination = destination
         self.wait_time = 0
-        self.waiting_state = -2 # -2 = waiting for the elevator, -1 = waiting in the elevator, 0 = arrived
+        self.waiting_state = -2  # -2 = waiting for the elevator, -1 = waiting in the elevator, 0 = arrived
 
     def elevator_stop(self, elevator, floor, direction):
         """
@@ -34,7 +35,8 @@ class Person:
         direction -- which way the elevator is travelling (1 = up, 0 = down)
         """
 
-        # If the person is waiting for the elevator and it arrives on their floor, board the elevator if it is going the right way
+        # If the person is waiting for the elevator and it arrives on their floor,
+        # board the elevator if it is going the right way
         if floor == self.floor and self.waiting_state == -2:
             if (direction == 1) == (self.floor < self.destination):
                 elevator.add_rider(self)
@@ -50,4 +52,5 @@ class Person:
         """
         Time step function, increments waiting time
         """
-        if (self.waiting_state != 0) self.wait_time += 1
+        if self.waiting_state != 0:
+            self.wait_time += 1

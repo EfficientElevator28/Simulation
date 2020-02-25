@@ -4,6 +4,7 @@ PersonScheduler.py
 """
 import numpy as np
 
+
 class PersonScheduler:
     """
     PersonScheduler class
@@ -24,9 +25,10 @@ class PersonScheduler:
 
         self.building = building
         self.step_time_scale = step_time_scale
-        self.expected_destinations = expected_destinations # Expect 1 button press per floor every hour
+        self.expected_destinations = expected_destinations  # Expect 1 button press per floor every hour
         if expected_destinations is None:
-            self.expected_destinations = {-1: {"0000": [1 for i in range(building.n_floors)]}} # By default, expect 1 button press per floor every hour.
+            self.expected_destinations = {-1: {"0000": [1 for i in range(building.n_floors)]}}
+            # By default, expect 1 button press per floor every hour.
         return
 
     def set_expected_destinations(self, val=None, weekdays=None, timestamp=None, floors=None):
@@ -51,4 +53,5 @@ class PersonScheduler:
         return
 
     def spawn_person(self):
-        #self.building.add_waiting_person(self)
+        # self.building.add_waiting_person(self)
+        pass
