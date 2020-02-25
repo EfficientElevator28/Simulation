@@ -31,13 +31,22 @@ class PersonScheduler:
 
     def set_expected_destinations(self, val=None, weekdays=None, timestamp=None, floors=None):
         """
-        Sets the expected values for button presses in the building per hour
+        Sets the expected values for button presses in the building per hour starting at a specified time
 
         Arguments:
         val -- The value to insert into the expected_destinations dict at the location specified by the other args. Can be a full dict, a list, or just a value. 
         weekdays -- Optional, list of days of the week this schedule is being applied to. If unspecified, sets the default value (Used for all weekdays that arent already set)
         timestamp -- Optional, the time of day this schedule begins at. If left blank, clears all other times and sets new one to start at "0000" (active all day) 
         floors -- Optional, list of floors to apply the new hourly rate to. If left blank, applies to all floors.
+        """
+        return
+
+    def get_current_expected_val(self, timestamp):
+        """
+        Based on the current time, finds the current time block it falls into from the expected_destinations table and returns the expected hourly presses list
+
+        Arguments:
+        timestamp -- a time to compare to the timetable stored in expected_destination
         """
         return
 
