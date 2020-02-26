@@ -31,6 +31,13 @@ class Building:
         #  In progress.
         self.floors = [Floor(floor_num) for floor_num in range(0, n_floors)]
 
+    def get_floor_by_position(self, position):
+        floor_idx = floor(position / self.floor_dist)
+        return self.floors[floor_idx]
+
+    def get_position_of_floor(self, floor):
+        return floor.floor_number * self.floor_dist
+
     def get_n_elevators(self):
         """
         Get the total number of elevators.

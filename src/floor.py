@@ -5,7 +5,7 @@ Author: Owen Barbour
 
 class Floor:
     """
-    Elevator class.
+    Floor class.
     """
 
     def __init__(self, floor_number, people_waiting=None, up_pressed=False, down_pressed=False):

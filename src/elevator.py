@@ -10,7 +10,7 @@ class Elevator:
     """
 
     def __init__(self, name, max_velocity=2.5, max_acc=1, jerk=0, speed=0, avg_boarding_time=5, max_riders=10,
-                 init_position=0):
+                 init_position=0.0):
         """
         inits the elevator.
 
@@ -39,7 +39,7 @@ class Elevator:
         #       For people inside the elevator, their destination should be added to this list when they are added
         #       For people waiting for an elevator, the building should decide which elevator is best situated to pick them up,
         #               and add their floor to that elevator's requests.
-
+        self.queued_floors = []
         self.riders = []
 
 
@@ -50,10 +50,28 @@ class Elevator:
 
         if self.state == ElevatorState.UP:
             # use constant speed
-            pass
+            self.position += self.velocity * dt
+            
+            # check if past desired floor
+            cur_floor = building.get_floor_by_position(self.position)
+            next_floor = self.queued_floors[0]
+
+            if cur_floor.floor_number == next_floor.floor_number:
+                print('at correct floor')
+                self.state = ElevatorState.LOADING_UNLOADING
+
+                # clamp the position
+                self.position = building.get_position_of_floor(next_floor)
+
+                # remove floor from queue
+                self.queued_floors.pop(0)
+
         elif self.state == ElevatorState.DOWN:
             # adjust with constant speed
-            pass
+            self.position -= self.velocity * dt
+
+            # check if below desired floor
+
         elif self.state == ElevatorState.LOADING_UNLOADING:
             # handle loading/unloading
             pass
@@ -93,5 +111,3 @@ class Elevator:
         Get the number of riders.
         '''
         return len(self.riders)
-    
-
