@@ -42,6 +42,13 @@ class Elevator:
 
         self.riders = []
 
+
+    def step(self, building, dt):
+        """
+        step the elevator forward.
+        """
+        pass
+
     def add_rider(self, rider):
         '''
         Adds a rider to the elevator cart.

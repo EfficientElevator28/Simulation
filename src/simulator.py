@@ -2,14 +2,14 @@
 author: Daniel Nichols
 """
 
-def default_step_func(cur_building):
+def default_step_func(cur_building, dt):
     """
     A default version of the step function.
     """
 
+    # step each elevator forward
     for e in cur_building.elevators:
-        # step the current elevator e
-        pass
+        e.step(cur_building, dt)
 
     # now adjust all the people
     # TODO get the people parameter form elevator
@@ -31,11 +31,16 @@ class Simulator:
     def init_building(self, building):
         self.building = building
 
-    def step(self):
+    def step(self, dt=1.0):
         """
         step the Simulator forward
         """
-        return self.step_func(self.buiding)
+
+        if self.building is None:
+            print('Building not initialized')
+            return None
+
+        return self.step_func(self.building, dt)
 
     def run(self, timestep=1, new_thread=False):
         """
