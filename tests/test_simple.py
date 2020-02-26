@@ -16,6 +16,11 @@ def test_simulation():
 
     sim.step()
 
+    e2.press_up_button()
+
+
+    sim.step()
+
 def run_tests():
     test_simulation()
 

@@ -71,7 +71,20 @@ class Elevator:
             self.position -= self.velocity * dt
 
             # check if below desired floor
+            cur_floor = building.get_floor_by_position(self.position)
+            next_floor = self.queued_floors[0]
 
+            if cur_floor.floor_number == next_floor.floor_number:
+                print('at correct floor; down')
+                self.state = ElevatorState.LOADING_UNLOADING
+                
+                # clamp elevator position
+                self.position = building.get_position_of_floor(next_floor)
+
+                # remove floor from list
+                self.queued_floors.pop(0)
+
+            
         elif self.state == ElevatorState.LOADING_UNLOADING:
             # handle loading/unloading
             pass
@@ -111,3 +124,9 @@ class Elevator:
         Get the number of riders.
         '''
         return len(self.riders)
+
+
+    def press_up_button(self):
+        """
+        Simulate a user pressing the UP button.
+        """
