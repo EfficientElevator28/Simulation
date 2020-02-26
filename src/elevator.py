@@ -54,6 +54,9 @@ class Elevator:
         elif self.state == ElevatorState.DOWN:
             # adjust with constant speed
             pass
+        elif self.state == ElevatorState.LOADING_UNLOADING:
+            # handle loading/unloading
+            pass
         elif self.state == ElevatorState.NO_ACTION:
             # do nothing bitch
             pass
