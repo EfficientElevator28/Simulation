@@ -47,7 +47,19 @@ class Elevator:
         """
         step the elevator forward.
         """
-        pass
+
+        if self.state == ElevatorState.UP:
+            # use constant speed
+            pass
+        elif self.state == ElevatorState.DOWN:
+            # adjust with constant speed
+            pass
+        elif self.state == ElevatorState.NO_ACTION:
+            # do nothing bitch
+            pass
+
+
+        return None
 
     def add_rider(self, rider):
         '''
