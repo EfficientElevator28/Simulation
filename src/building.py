@@ -4,6 +4,7 @@ building.py
 Defines a Building class, which contains elevators.
 """
 from src.floor import Floor
+from math import floor as math_floor
 
 
 class Building:
@@ -29,10 +30,10 @@ class Building:
         self.elev_height = elev_height
         # TODO: create a list of floors to add people to when they first arrive and are waiting for an elevator.
         #  In progress.
-        self.floors = [Floor(floor_num) for floor_num in range(0, n_floors)]
+        self.floors = [Floor(floor_num) for floor_num in range(0, n_floors)]  # floors is zero indexed
 
     def get_floor_by_position(self, position):
-        floor_idx = floor(position / self.floor_dist)
+        floor_idx = math_floor(position / self.floor_dist + .01)
         return self.floors[floor_idx]
 
     def get_position_of_floor(self, floor):

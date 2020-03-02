@@ -17,11 +17,11 @@ class Person:
 
         Arguments:
         floor -- the floor the individual is arriving on.
-        destination -- the floor the individual wants to go to
+        destination -- the floor number the individual wants to go to
         """
         self.floor = floor
         self.destination = destination
-        self.wait_time = 0
+        self.wait_time = 0  # includes time from first waiting for elevator to time getting off
         self.waiting_state = -2  # -2 = waiting for the elevator, -1 = waiting in the elevator, 0 = arrived
 
     def elevator_stop(self, elevator, floor, direction):

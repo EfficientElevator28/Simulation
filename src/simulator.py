@@ -2,6 +2,7 @@
 author: Daniel Nichols
 """
 
+
 def default_step_func(cur_building, dt):
     """
     A default version of the step function.
@@ -15,6 +16,29 @@ def default_step_func(cur_building, dt):
     # TODO get the people parameter form elevator
 
     return True
+
+
+def realistic_physics_step_func(cur_building, time_inc):
+    """
+    Step function which uses realistic physics calculations/movements
+    """
+    print("step func called")
+    # Update position and passengers of elevators (and floors if there is any loading/unloading done
+    for e in cur_building.elevators:
+        # Elevator class's step_realistic_physics...
+        e.step_realistic_physics(cur_building, time_inc)
+
+        # Update wait times of elevator riders
+        for person in e.riders:
+            person.wait_time += time_inc
+
+    # Update the waiting time of people on floors still
+    for floor in cur_building.floors:
+        for person in floor.people_waiting:
+            person.wait_time += time_inc
+
+    return True
+
 
 class Simulator:
     """

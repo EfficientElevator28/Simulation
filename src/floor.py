@@ -27,12 +27,14 @@ class Floor:
         else:
             self.people_waiting = people_waiting
 
+    # DO NOT USE
     def pickup_going_up(self):
         self.down_pressed = False
         # TODO: remove each Person class from the people_waiting variable if their intention is to go down.
         #  Transfer these people to the elevator class
         pass
 
+    # DO NOT USE
     def pickup_going_down(self):
         self.up_pressed = False
         # TODO: remove each Person class from the people_waiting variable if their intention is to go up.
