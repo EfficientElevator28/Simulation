@@ -38,7 +38,7 @@ def run_realistic_physics_test():
     vis.pyglet_window.dispatch_event("on_draw")
     while vis.alive == 1:
         # print("Running loop")
-        time.sleep(5)
+        # time.sleep(5)
 
         # These three lines are needed
         pyglet.clock.tick()
