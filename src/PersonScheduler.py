@@ -55,3 +55,5 @@ class PersonScheduler:
     def spawn_person(self):
         # self.building.add_waiting_person(self)
         pass
+
+    # TODO: this class needs to trigger button presses on the floors
