@@ -52,8 +52,17 @@ class PersonScheduler:
         """
         return
 
-    def spawn_person(self):
-        # self.building.add_waiting_person(self)
-        pass
+    # Returns the absolute time and list of people (or one person) that will need to be spawned next
+    # relative to the current_timestamp
+    def get_time_and_people_of_next_addition(self, current_timestamp):
+        # This is what needs to be accessed by the RL step function to determine when to call the ML/when to add
+        # people to the system
+        # TODO *******
+        return 0.0, []
 
-    # TODO: this class needs to trigger button presses on the floors
+    # Triggers button presses on floors by spawning people in
+    def spawn_people(self, timestamp, people):
+        self.building.last_floor_button_pressed = timestamp  # needed for rl step func v1
+        for person in people:
+            self.building.add_waiting_person(person)
+
