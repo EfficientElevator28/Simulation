@@ -3,6 +3,11 @@ Author: Austin Day
 PersonScheduler.py
 """
 import numpy as np
+import scipy.stats
+import matplotlib.pyplot as plt
+import math
+
+from src.Person import Person
 
 
 class PersonScheduler:
@@ -11,54 +16,90 @@ class PersonScheduler:
     Defines the scheduling for arrival and destinations of elevator passengers
     """
 
-    def __init__(self, building, step_time_scale, expected_destinations=None):
+    def __init__(self, building, poisson_mean_density=1, p_seed=1):
         """
         Creates a PersonScheduler object.
 
         Arguments:
         building -- The building object for the simulation
-        step_time_scale -- The amount of time elapsed between each simulation step (in ms)
-        expected_destinations --    A dictionary keyed on ints representing days of the week (-1 = default, 0-6 = monday-sunday) 
-                                    each key storing a dict keyed on timestamps representing the time of day this 'schedule' starts (military time)
-                                    each timestamp key holding a list representing hourly rates of button presses on each floor. It's complicated.
+        poisson_mean_density -- intensity (ie mean density) of the Poisson process; ==1 is mean 1 per second
+        p_seed -- numpy RNG seed to give the same results with the same parameters
         """
 
         self.building = building
-        self.step_time_scale = step_time_scale
-        self.expected_destinations = expected_destinations  # Expect 1 button press per floor every hour
-        if expected_destinations is None:
-            self.expected_destinations = {-1: {"0000": [1 for i in range(building.n_floors)]}}
-            # By default, expect 1 button press per floor every hour.
-        return
+        self.poisson_mean_density = poisson_mean_density
+        self.p_seed = p_seed
+        self.people_spawning = []
+        self.people_spawning_min_index = 0
 
-    def set_expected_destinations(self, val=None, weekdays=None, timestamp=None, floors=None):
-        """
-        Sets the expected values for button presses in the building per hour starting at a specified time
+        self.setup_distribution()
 
-        Arguments:
-        val -- The value to insert into the expected_destinations dict at the location specified by the other args. Can be a full dict, a list, or just a value. 
-        weekdays -- Optional, list of days of the week this schedule is being applied to. If unspecified, sets the default value (Used for all weekdays that arent already set)
-        timestamp -- Optional, the time of day this schedule begins at. If left blank, clears all other times and sets new one to start at "0000" (active all day) 
-        floors -- Optional, list of floors to apply the new hourly rate to. If left blank, applies to all floors.
-        """
-        return
+    def setup_distribution(self):
+        # Simulation window parameters
+        x_min = 0
+        x_max = 100
+        y_min = 0
+        y_max = self.building.n_floors + 1  # num_floors + 1
+        x_delta = x_max - x_min
+        y_delta = y_max - y_min  # rectangle dimensions
+        # area_total = x_delta * y_delta
 
-    def get_current_expected_val(self, timestamp):
-        """
-        Based on the current time, finds the current time block it falls into from the expected_destinations table and returns the expected hourly presses list
+        # Point process parameters
+        # intensity (ie mean density) of the Poisson process; lambda=1 is mean 1 per second
+        lambda0 = self.poisson_mean_density
 
-        Arguments:
-        timestamp -- a time to compare to the timetable stored in expected_destination
-        """
-        return
+        # Simulate Poisson point process
+        np.random.seed(self.p_seed)
+        num_points = scipy.stats.poisson(lambda0 * x_delta).rvs()  # Poisson number of points
+        xx = x_delta * scipy.stats.uniform.rvs(0, 1, (num_points, 1)) + x_min  # x-coors of Poisson points
+        yy = y_delta * scipy.stats.uniform.rvs(0, 1, (num_points, 1)) + y_min  # y-coor: starting floor
+        zz = y_delta * scipy.stats.uniform.rvs(0, 1, (num_points, 1)) + y_min  # z-coor: destination floor
 
-    # Returns the absolute time and list of people (or one person) that will need to be spawned next
+        for val_arr in yy:
+            val_arr[0] = int(math.floor(val_arr[0]))
+        for val_arr in zz:
+            val_arr[0] = int(math.floor(val_arr[0]))
+
+        for i in range(0, len(xx)):
+            self.people_spawning.append({
+                "time": xx[i][0],
+                "starting_floor": int(math.floor(yy[i][0])),
+                "dest_floor": int(math.floor(zz[i][0])),
+                "index": i
+            })
+
+    # Can be called after a simulator step to cut down on array search time (optional but much more efficient)
+    # TODO
+    def update_people_spawning_min_index(self, min_index):
+        self.people_spawning_min_index = min_index
+
+    # Returns the absolute time and list of people (or likely one person) that will need to be spawned next
     # relative to the current_timestamp
     def get_time_and_people_of_next_addition(self, current_timestamp):
         # This is what needs to be accessed by the RL step function to determine when to call the ML/when to add
         # people to the system
-        # TODO *******
-        return 0.0, []
+
+        search_index = self.people_spawning_min_index
+        max_index = len(self.people_spawning)
+        while search_index < max_index and self.people_spawning[search_index]["time"] < current_timestamp:
+            search_index = search_index + 1
+
+        if search_index == max_index:
+            if self.people_spawning[max_index]["time"] >= current_timestamp:
+                return self.people_spawning[max_index]["time"], \
+                       [Person(self.people_spawning[max_index]["starting_floor"],
+                               self.people_spawning[max_index]["dest_floor"])]
+            else:
+                return -1.0, []
+        else:
+            # The end of the array of times/people hasn't been reached
+            temp_people = []
+            new_timestamp = self.people_spawning[search_index]["time"]
+            while search_index <= max_index and abs(self.people_spawning[search_index]["time"] - new_timestamp) < .0001:
+                temp_people.append(Person(self.people_spawning[search_index]["starting_floor"],
+                                          self.people_spawning[search_index]["dest_floor"]))
+                search_index = search_index + 1
+            return new_timestamp, temp_people
 
     # Triggers button presses on floors by spawning people in
     def spawn_people(self, timestamp, people):

@@ -95,21 +95,37 @@ def realistic_physics_step_func(cur_building, time_inc, abbr_step_option=False):
     return True, new_time_inc
 
 
+# Default reward function -- returns -(sum # people) where # people includes those waiting for and on elevators
+def reward_sum_people(cur_building):
+    sum_people = 0
+    for e in cur_building.elevators:
+        if e.riders is not None:
+            sum_people += len(e.riders)
+    for floor in cur_building.floors:
+        if floor.people_waiting is not None:
+            sum_people += len(floor.people_waiting)
+    return -sum_people
+
+
 class Simulator:
     """
     Simulator class.
     """
 
-    def __init__(self, name, step_func=default_step_func):
+    def __init__(self, name, step_func=default_step_func, reward_func=reward_sum_people):
         """
         initialize the Simulator.
         """
         self.name = name
         self.total_time = 0  # total time elapsed
         self.step_func = step_func
+        self.reward_func = reward_func
 
     def init_building(self, building):
         self.building = building
+
+    def reward(self):
+        return self.reward_func(self.building)
 
     def step(self, dt=1.0):
         """
