@@ -16,7 +16,7 @@ class PersonScheduler:
     Defines the scheduling for arrival and destinations of elevator passengers
     """
 
-    def __init__(self, building, poisson_mean_density=1, p_seed=1):
+    def __init__(self, building, poisson_mean_density=.2, p_seed=1, seconds_to_schedule=100000):
         """
         Creates a PersonScheduler object.
 
@@ -29,6 +29,7 @@ class PersonScheduler:
         self.building = building
         self.poisson_mean_density = poisson_mean_density
         self.p_seed = p_seed
+        self.seconds_to_schedule = seconds_to_schedule
         self.people_spawning = []
         self.people_spawning_min_index = 0
 
@@ -37,7 +38,7 @@ class PersonScheduler:
     def setup_distribution(self):
         # Simulation window parameters
         x_min = 0
-        x_max = 100
+        x_max = self.seconds_to_schedule
         y_min = 0
         y_max = self.building.n_floors + 1  # num_floors + 1
         x_delta = x_max - x_min
@@ -52,6 +53,10 @@ class PersonScheduler:
         np.random.seed(self.p_seed)
         num_points = scipy.stats.poisson(lambda0 * x_delta).rvs()  # Poisson number of points
         xx = x_delta * scipy.stats.uniform.rvs(0, 1, (num_points, 1)) + x_min  # x-coors of Poisson points
+        xx_new = []
+        for val in xx:
+            xx_new.append(val[0])
+        xx_new.sort()
         yy = y_delta * scipy.stats.uniform.rvs(0, 1, (num_points, 1)) + y_min  # y-coor: starting floor
         zz = y_delta * scipy.stats.uniform.rvs(0, 1, (num_points, 1)) + y_min  # z-coor: destination floor
 
@@ -62,7 +67,7 @@ class PersonScheduler:
 
         for i in range(0, len(xx)):
             self.people_spawning.append({
-                "time": xx[i][0],
+                "time": xx_new[i],
                 "starting_floor": int(math.floor(yy[i][0])),
                 "dest_floor": int(math.floor(zz[i][0])),
                 "index": i
@@ -78,6 +83,9 @@ class PersonScheduler:
     def get_time_and_people_of_next_addition(self, current_timestamp):
         # This is what needs to be accessed by the RL step function to determine when to call the ML/when to add
         # people to the system
+
+        if current_timestamp > self.seconds_to_schedule:
+            return -1.0, []
 
         search_index = self.people_spawning_min_index
         max_index = len(self.people_spawning)

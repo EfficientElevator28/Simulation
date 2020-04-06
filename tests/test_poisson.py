@@ -2,7 +2,14 @@ import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
 import math
+from src.Person import Person
+from src.Visualization.visualization import Visualization
+from src.simulator import *
+from src.building import *
+from src.elevator import *
+from src.PersonScheduler import *
 
+"""
 # Simulation window parameters
 xMin = 0
 xMax = 100
@@ -37,3 +44,13 @@ plt.scatter(xx, zz, edgecolor='b', facecolor='none', alpha=0.5)
 plt.xlabel("x")
 plt.ylabel("y")
 plt.show()
+"""
+sim = Simulator('test', step_func=realistic_physics_step_func)
+elevators = [Elevator(1)]
+building = Building(name=1, elevators=elevators, n_floors=10)
+sim.init_building(building)
+
+ps = PersonScheduler(building)  # , seconds_to_schedule=50)
+print(ps.people_spawning[:20])
+print(ps.get_time_and_people_of_next_addition(20))
+
