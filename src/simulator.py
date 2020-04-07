@@ -19,7 +19,7 @@ def default_step_func(cur_building, dt):
     return True
 
 
-def rl_step_func_v1(cur_building, starting_time, time_inc, action, person_scheduler):
+def rl_step_func_v1(cur_building, starting_time, action, person_scheduler, time_inc=3):
     """
     Reinforcement learning step function does the following:
     1) add the action
@@ -31,7 +31,23 @@ def rl_step_func_v1(cur_building, starting_time, time_inc, action, person_schedu
     Note: cur_building and the internal elevator need to be a deep copy
 
     action -- destination floor for the single elevator system
+    time_inc -- the amount to step the realistic_physics_step_function at one time. The amount should probably be < 5,
+                but any other changes only affect performance since the option abbr_step_option=True is used.
+
+    Return -- new system time
     """
+    # Special Case: the action is already the current floor; then: progress 1 second
+    cur_elev_pos = cur_building.elevators[0].position
+    action_floor_height = cur_building.floor_dist * action
+    # print(str(action_floor_height), str(cur_elev_pos))
+    if abs(action_floor_height - cur_elev_pos) < .01:
+        next_spawn_time, people_to_spawn = person_scheduler.get_time_and_people_of_next_addition(
+            current_timestamp=starting_time)
+        if next_spawn_time > starting_time + 1:
+            return starting_time + 1
+        else:
+            person_scheduler.spawn_people(next_spawn_time, people_to_spawn)
+            return next_spawn_time + .001
 
     # First: implement the action: add the floor we are going to to the single elevator's queued_floors member
     cur_building.elevators[0].queued_floors.append(cur_building.floors[action])
@@ -43,10 +59,15 @@ def rl_step_func_v1(cur_building, starting_time, time_inc, action, person_schedu
         next_spawn_time, people_to_spawn = person_scheduler.get_time_and_people_of_next_addition(
             current_timestamp=current_time)
         person_scheduler.spawn_people(next_spawn_time, people_to_spawn)
-        return
+        if cur_building.elevators[0].queued_floors is not None and len(cur_building.elevators[0].queued_floors) >= 1:
+            cur_building.elevators[0].queued_floors.pop(0)
+        # print(str(next_spawn_time))
+        return next_spawn_time + .001
 
     # Second: ELSE, call step func and queue people as needed until there is no longer a queued elevator
-    while len(cur_building.elevators[0].queued_floors) > 0:
+    while len(cur_building.elevators[0].queued_floors) > 0 or \
+            cur_building.elevators[0].state == ElevatorState.LOADING_UNLOADING:
+        # print("Running while")
         next_spawn_time, people_to_spawn = person_scheduler.get_time_and_people_of_next_addition(
             current_timestamp=current_time)
         time_till_next_spawn = next_spawn_time - current_time
@@ -55,11 +76,20 @@ def rl_step_func_v1(cur_building, starting_time, time_inc, action, person_schedu
             # People are going to spawn before the standard time_inc can be elapsed
             return_cond, actual_time_inc = realistic_physics_step_func(cur_building, time_till_next_spawn,
                                                                        abbr_step_option=True)
-            if actual_time_inc == time_till_next_spawn:
-                # Implies loading/unloading didn't finish early
+            if abs(actual_time_inc - time_till_next_spawn) < .001:
+                # Implies loading/unloading didn't finish early, so we are ready to spawn the people
                 person_scheduler.spawn_people(next_spawn_time, people_to_spawn)
+                current_time = next_spawn_time + .001
+            else:
+                # The loading/unloading did finish early (actual_time_inc < time_till_next_spawn)
+                current_time += actual_time_inc
+                pass
         else:
-            return_cond, actual_time_inc = realistic_physics_step_func(cur_building, time_inc, abbr_step_option=True)
+            # People aren't going to spawn before the standard time_inc can be elapsed
+            return_cond, actual_time_inc = realistic_physics_step_func(cur_building, time_inc,
+                                                                       abbr_step_option=True)
+            current_time += actual_time_inc
+    return current_time
 
 
 def realistic_physics_step_func(cur_building, time_inc, abbr_step_option=False):
@@ -76,6 +106,7 @@ def realistic_physics_step_func(cur_building, time_inc, abbr_step_option=False):
         for e in cur_building.elevators:
             boarding_time_remaining = e.avg_boarding_time - e.time_since_beg_of_action
             if e.state == ElevatorState.LOADING_UNLOADING and boarding_time_remaining < new_time_inc:
+                # print("Abbreviating time")
                 new_time_inc = boarding_time_remaining + .0001  # Account for rounding error
 
     # Update position and passengers of elevators (and floors if there is any loading/unloading done
@@ -112,13 +143,14 @@ class Simulator:
     Simulator class.
     """
 
-    def __init__(self, name, step_func=default_step_func, reward_func=reward_sum_people):
+    def __init__(self, name, step_func=default_step_func, reward_func=reward_sum_people, rl_step_func=rl_step_func_v1):
         """
         initialize the Simulator.
         """
         self.name = name
         self.total_time = 0  # total time elapsed
         self.step_func = step_func
+        self.rl_step_func = rl_step_func
         self.reward_func = reward_func
 
     def init_building(self, building):
@@ -126,6 +158,20 @@ class Simulator:
 
     def reward(self):
         return self.reward_func(self.building)
+
+    def rl_step(self, starting_time, action, person_scheduler, time_inc=3):
+        """
+        Step function version used for RL
+        """
+        if self.building is None:
+            print('Building not initialized')
+            return None
+
+        self.total_time = self.rl_step_func(self.building, starting_time, action, person_scheduler, time_inc=time_inc)
+
+        bld, state_list = self.get_state()
+        reward = self.reward()
+        return state_list, reward, bld
 
     def step(self, dt=1.0):
         """
