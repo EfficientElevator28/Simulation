@@ -14,7 +14,7 @@ class Visualization:
     """
     Graphics/visualization class.
     """
-    pyglet_window = pyglet.window.Window(height=700, width=1200, caption='Simulation', resizable=False)
+    pyglet_window = pyglet.window.Window(height=700, width=675, caption='Simulation', resizable=False)  # width=1200
     color_pairs = (120, 0, 0, 100) * int(8 / 2)
     color_elevator_shaft_even = (0, 115, 230, 50) * 4
     color_elevator_even = (0, 115, 230, 100) * 4
@@ -39,6 +39,7 @@ class Visualization:
         self.n_elevators = len(building.elevators)
 
         # Component coordinate locations
+        """
         self.pos_elevators = []
         self.pos_elevator_shafts = []
         self.elev_section_min_x = 750
@@ -48,6 +49,16 @@ class Visualization:
         self.dist_bt_elev_ratio = .8
         self.floor_section_min_x = 575
         self.floor_section_max_x = 725
+        """
+        self.pos_elevators = []
+        self.pos_elevator_shafts = []
+        self.elev_section_min_x = 225
+        self.elev_section_min_y = 50
+        self.elev_section_max_x = 625
+        self.elev_section_max_y = 650
+        self.dist_bt_elev_ratio = .8
+        self.floor_section_min_x = 50
+        self.floor_section_max_x = 200
 
         # Determine elevator/shaft coordinates based on above parameters
         self.elevator_component_positions()
@@ -74,7 +85,7 @@ class Visualization:
 
     # @pyglet_window.event
     def on_draw(self):
-        print("Running on_draw")
+        # print("Running on_draw")
         self.pyglet_window.clear()
 
         # self.label.draw()
@@ -118,7 +129,10 @@ class Visualization:
 
         x_range = max_x - min_x
         x_elev_width = x_range / (self.n_elevators + ((self.n_elevators - 1) * self.dist_bt_elev_ratio))
-        x_elev_dist_bt = (x_range - (x_elev_width * self.n_elevators)) / (self.n_elevators - 1)
+        if self.n_elevators > 1:
+            x_elev_dist_bt = (x_range - (x_elev_width * self.n_elevators)) / (self.n_elevators - 1)
+        else:
+            x_elev_dist_bt = 0
 
         y_range = max_y - min_y
         y_floor_dist = y_range / self.n_floors
