@@ -40,7 +40,7 @@ class PersonScheduler:
         x_min = 0
         x_max = self.seconds_to_schedule
         y_min = 0
-        y_max = self.building.n_floors + 1  # num_floors + 1
+        y_max = self.building.n_floors  # num_floors
         x_delta = x_max - x_min
         y_delta = y_max - y_min  # rectangle dimensions
         # area_total = x_delta * y_delta
@@ -66,10 +66,20 @@ class PersonScheduler:
             val_arr[0] = int(math.floor(val_arr[0]))
 
         for i in range(0, len(xx)):
+            starting_floor = int(math.floor(yy[i][0]))
+            dest_floor = int(math.floor(zz[i][0]))
+
+            # Not allowing pressing the same floor as the person is on
+            if dest_floor == starting_floor:
+                if dest_floor != 0:
+                    dest_floor -= 1
+                else:
+                    dest_floor += 1
+
             self.people_spawning.append({
                 "time": xx_new[i],
-                "starting_floor": int(math.floor(yy[i][0])),
-                "dest_floor": int(math.floor(zz[i][0])),
+                "starting_floor": starting_floor,
+                "dest_floor": dest_floor,
                 "index": i
             })
 
@@ -113,5 +123,6 @@ class PersonScheduler:
     def spawn_people(self, timestamp, people):
         self.building.last_floor_button_pressed = timestamp  # needed for rl step func v1
         for person in people:
+            # print(str(person.floor))
             self.building.add_waiting_person(person)
 
