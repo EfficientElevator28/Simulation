@@ -59,7 +59,7 @@ class Building:
         if person.floor < person.destination:
             self.floors[person.floor].up_pressed = True
         else:
-            self.floors[person.floor].up_pressed = False
+            self.floors[person.floor].down_pressed = True
 
     def get_total_people_in_system(self):
         total = 0
