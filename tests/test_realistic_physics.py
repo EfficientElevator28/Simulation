@@ -19,6 +19,7 @@ def run_realistic_physics_test():
     elevators[1].queued_floors.append(building.floors[4])
     elevators[1].queued_floors.append(building.floors[7])
     elevators[1].queued_floors.append(building.floors[6])
+    elevators[2].queued_floors.append(building.floors[2])
     # 3 people get on @ floor 2.
     # At floor 4, 2 people get off and 3 get on - 4 total now
     # At floor 7, 3 people get off and 1 gets on (only b/c floor below him/her is queued) - 1 total now
@@ -29,6 +30,7 @@ def run_realistic_physics_test():
     building.floors[1].people_waiting.append(Person(floor=1, destination=4))
     building.floors[1].people_waiting.append(Person(floor=1, destination=4))
     building.floors[1].people_waiting.append(Person(floor=1, destination=7))
+    building.floors[2].people_waiting.append(Person(floor=2, destination=6))
     building.floors[4].people_waiting.append(Person(floor=4, destination=7))
     building.floors[4].people_waiting.append(Person(floor=4, destination=7))
     building.floors[4].people_waiting.append(Person(floor=4, destination=7))
@@ -38,7 +40,7 @@ def run_realistic_physics_test():
     vis.pyglet_window.dispatch_event("on_draw")
     while vis.alive == 1:
         # print("Running loop")
-        time.sleep(5)
+        time.sleep(3)
 
         # These three lines are needed
         pyglet.clock.tick()

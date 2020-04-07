@@ -75,7 +75,7 @@ class Elevator:
         if self.prev_acc_dec == ElevatorMotion.GETTING_FASTER or \
                 (self.prev_acc_dec == ElevatorMotion.NEITHER and self.time_since_beg_of_action < time_threshold):
             # Determine if elevator can accelerate to max velocity and decelerate to velocity=0 in remaining distance
-            print("Getting faster")
+            # print("Getting faster")
             if direction_of_travel == "up":
                 time_to_reach_max_velocity = self.calc_time_to_reach_velocity(self.max_velocity, self.velocity,
                                                                               self.max_acc)
@@ -95,7 +95,7 @@ class Elevator:
                 return new_position, time_remaining
             else:
                 # Elevator won't hit max velocity in remaining distance
-                print("Running abbreviated speed up/slow down")
+                # print("Running abbreviated speed up/slow down")
                 if direction_of_travel == "up":
                     new_position, time_remaining = \
                         self.abbr_velocity_calc_dist_time(total_time_increment, d0=self.position, v1=self.velocity,
@@ -108,7 +108,7 @@ class Elevator:
         # If prev_acc_dec is NEITHER -- maybe can cover in previous case since time to accelerate to max velocity is 0
         # Case: velocity is non-zero and no current acceleration/deceleration
         elif self.prev_acc_dec == ElevatorMotion.NEITHER:
-            print("Neither")
+            # print("Neither")
             new_position, time_remaining = \
                 self.constant_rate_calc_dist_time(total_time_increment, v2=self.velocity, a2=self.max_dec,
                                                   starting_position=self.position,
@@ -117,7 +117,7 @@ class Elevator:
             return new_position, time_remaining
         # If prev_acc_dec is SLOWING
         else:
-            print("Slowing")
+            # print("Slowing")
             new_position, time_remaining = \
                 self.slowing_down_calc_dist_time(total_time_increment, v2=self.velocity, a2=self.max_dec,
                                                  starting_position=self.position, desired_position=desired_floor_height)
@@ -196,6 +196,7 @@ class Elevator:
         # Based off the acc/vel, we know the time needed to stop. So, comparing this with the time_increment remaining,
         # we can know if/what the leftover time is.
         time_req_to_stop = abs(v2 / a2)
+        # print("Time req to stop: " + str(time_req_to_stop) + ", time_increment: " + str(time_increment))
         if time_req_to_stop < time_increment:
             self.velocity = 0.0
             self.prev_acc_dec = ElevatorMotion.NEITHER
@@ -204,15 +205,20 @@ class Elevator:
             dist_covered_in_remaining_time = self.calc_distance_per_time(abs(v2), -abs(a2), time_increment)
 
             # Update velocity
-            if starting_position < desired_position:
+            # print("Velocity before: " + str(self.velocity))
+            if self.velocity > 0:  # 4/7 was starting_position < desired_position
                 self.velocity -= abs(a2) * time_increment
             else:
                 self.velocity += abs(a2) * time_increment
+            # print("Velocity after: " + str(self.velocity))
 
+            # print("Position before: " + str(starting_position))
             if starting_position < desired_position:
                 ending_position = starting_position + dist_covered_in_remaining_time
             else:
                 ending_position = starting_position - dist_covered_in_remaining_time
+            # print("Position after: " + str(ending_position))
+
             self.prev_acc_dec = ElevatorMotion.SLOWING
             return ending_position, 0.0
 
@@ -236,16 +242,16 @@ class Elevator:
         # quad_a = (a1 * a1 / 2 / a2) - (a1 / 2)
         # quad_b = v1 * a1 / a2 - v1
         # quad_c = (v1 * v1 / 2 / a2) + s0 - d0
-        print("d0=" + str(d0) + " s0=" + str(s0) + " v1=" + str(v1) + " a1=" + str(a1) + " a2=" + str(a2))
+        # print("d0=" + str(d0) + " s0=" + str(s0) + " v1=" + str(v1) + " a1=" + str(a1) + " a2=" + str(a2))
 
         quad_a = abs(a1)/2 + abs(a1)*abs(a1)/2/abs(a2)
         quad_b = abs(v1) + abs(a1)*abs(v1)/abs(a2)
         quad_c = -abs(abs(d0) - abs(s0)) + abs(v1)*abs(v1)/2/abs(a2)
-        print("Quadratic params: a=" + str(quad_a) + " b=" + str(quad_b) + " c=" + str(quad_c))
+        # print("Quadratic params: a=" + str(quad_a) + " b=" + str(quad_b) + " c=" + str(quad_c))
 
         # larger < 0 might indicate no remaining time
         q_success, larger, smaller = self.quadratic_formula(quad_a, quad_b, quad_c)
-        print("Quadratic - larger=" + str(larger) + ", smaller=" + str(smaller))
+        # print("Quadratic - larger=" + str(larger) + ", smaller=" + str(smaller))
         remaining_time_to_increase_acc = max(larger, 0.0)  # aka t1
 
         if time_increment < remaining_time_to_increase_acc:
@@ -335,7 +341,7 @@ class Elevator:
     def quadratic_formula(a, b, c):
         under_radical = b * b - 4 * a * c
         if under_radical < 0.0:
-            print("Quadratic negative under radical: a=" + str(a) + " b=" + str(b) + " c=" + str(c))
+            print("Error: Quadratic negative under radical: a=" + str(a) + " b=" + str(b) + " c=" + str(c))
             return False, 0, 0
         radical = sqrt(under_radical)
         ans1 = (-b + radical) / (2 * a)
@@ -356,7 +362,7 @@ class Elevator:
                 rider.wait_time += time_inc - time_remaining
                 self.remove_rider_index(rider_index)
 
-        # Load passengers
+        # Load passengers - only do so if it is a 1 elevator system or if there is a queued floor after this one
         if len(self.queued_floors) > 1:
             next_floor_num = self.queued_floors[1].floor_number
             if next_floor_num < desired_floor_num:
@@ -386,9 +392,32 @@ class Elevator:
                 # Remove rider from the floor. Do in reverse order since popping.
                 for rider_num in range(len(rider_indexes_transferred) - 1, -1, -1):
                     desired_floor.people_waiting.pop(rider_num)
+        elif len(building.elevators) == 1:
+            # With the one elevator case (RL v1), we won't have another queued floor (determined afterwards)
+            desired_floor.down_pressed = False
+            desired_floor.up_pressed = False
+
+            # Create list of rider (indexes) to transfer from the floor to the elevator
+            rider_indexes_to_transfer = []
+            for rider_num in range(0, len(desired_floor.people_waiting)):
+                rider_indexes_to_transfer.append(rider_num)
+
+            rider_indexes_transferred = []
+            if len(rider_indexes_to_transfer) > 0:
+                for rider_num in range(0, min(len(rider_indexes_to_transfer), self.max_riders - self.get_num_riders())):
+                    # Add rider to the elevator
+                    rider_indexes_transferred.append(rider_num)
+                    desired_floor.people_waiting[rider_num].waiting_state = -1
+                    self.riders.append(desired_floor.people_waiting[rider_num])
+
+            if len(rider_indexes_transferred) > 0:
+                # Remove rider from the floor. Do in reverse order since popping.
+                for rider_num in range(len(rider_indexes_transferred) - 1, -1, -1):
+                    desired_floor.people_waiting.pop(rider_num)
 
         # Loading/unloading done, so remove floor from elevator's queued_floors
-        self.queued_floors.pop(0)
+        if len(self.queued_floors) > 0:
+            self.queued_floors.pop(0)
 
     def physics_calc_changes(self, new_position, time_remaining, distance_threshold, desired_floor_height,
                              desired_floor_num, time_inc, building):
@@ -413,9 +442,10 @@ class Elevator:
         Note: if there are no queued elevators, it is set to currently not move.
         """
         distance_threshold = .01
-        print("--------")
+        # print("--------")
         # If elevator is idle but queued_floors has now been updated, change state in order to perform an action
         if self.state == ElevatorState.NO_ACTION:
+            # print("NO ACTION")
             if len(self.queued_floors) > 0:
                 desired_floor_num = self.queued_floors[0].floor_number
                 desired_floor_height = desired_floor_num * building.floor_dist  # floor 0 at height 0
@@ -426,7 +456,6 @@ class Elevator:
                 else:
                     self.state = ElevatorState.UP
                     self.time_since_beg_of_action = 0
-            pass
 
         if self.state == ElevatorState.UP or self.state == ElevatorState.DOWN:
             if len(self.queued_floors) > 0:
@@ -434,7 +463,9 @@ class Elevator:
                 desired_floor_height = desired_floor_num * building.floor_dist  # floor 0 at height 0
 
                 new_position, time_remaining = self.physics_calc(building, time_inc)
-                print("UP/DOWN - Current position: " + str(self.position) + ", new position: " + str(new_position))
+                # print("Desired height: " + str(desired_floor_height) + ", current height: " + str(self.position) +
+                #       ", new position: " + str(new_position))
+                # print("UP/DOWN - Current position: " + str(self.position) + ", new position: " + str(new_position))
                 self.physics_calc_changes(new_position, time_remaining, distance_threshold, desired_floor_height,
                                           desired_floor_num, time_inc, building)
             else:
@@ -446,6 +477,9 @@ class Elevator:
                 self.time_since_beg_of_action += time_inc
             else:
                 self.time_since_beg_of_action = 0
+                # If there are queued floors, this will only be kept briefly(at beginning of physics_calc call)
+                self.state = ElevatorState.NO_ACTION
+
                 if len(self.queued_floors) > 0:
                     desired_floor_num = self.queued_floors[0].floor_number
                     desired_floor_height = desired_floor_num * building.floor_dist  # floor 0 at height 0
@@ -457,9 +491,9 @@ class Elevator:
                 else:
                     self.time_since_beg_of_action = 0
                     self.state = ElevatorState.NO_ACTION
-                pass
         else:  # ElevatorState.NO_ACTION
             pass
+        # print(str(self.state))
         return None
 
     def step(self, building, dt):
@@ -476,7 +510,7 @@ class Elevator:
             next_floor = self.queued_floors[0]
 
             if cur_floor.floor_number == next_floor.floor_number:
-                print('at correct floor')
+                # print('at correct floor')
                 self.state = ElevatorState.LOADING_UNLOADING
 
                 # clamp the position
@@ -494,7 +528,7 @@ class Elevator:
             next_floor = self.queued_floors[0]
 
             if cur_floor.floor_number == next_floor.floor_number:
-                print('at correct floor; down')
+                # print('at correct floor; down')
                 self.state = ElevatorState.LOADING_UNLOADING
                 
                 # clamp elevator position

@@ -16,7 +16,7 @@ class Person:
         Creates a person object.
 
         Arguments:
-        floor -- the floor the individual is arriving on.
+        floor -- the floor the individual is arriving on (starting floor)
         destination -- the floor number the individual wants to go to
         """
         self.floor = floor
