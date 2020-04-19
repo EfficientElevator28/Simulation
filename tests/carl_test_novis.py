@@ -26,7 +26,7 @@ class Simulation_for_RL:
         # simulation.
         # Note: poisson_mean_density=.2 (means average spawn .2 people per second), seconds_to_schedule=100000 (don't
         # exceed this system time which is tracked in sim.total_time).
-        self.person_scheduler = PersonScheduler(self.building, poisson_mean_density=.05, seconds_to_schedule=100000)
+        self.person_scheduler = PersonScheduler(self.building, poisson_mean_density=.05, seconds_to_schedule=1000000)
         #print(self.person_scheduler.people_spawning[:10])
         
     def step(self, action):

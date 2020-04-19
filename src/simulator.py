@@ -2,6 +2,7 @@
 author: Daniel Nichols
 """
 from src.ElevatorState import ElevatorState
+from src.elevator_motion import ElevatorMotion
 
 
 def default_step_func(cur_building, dt):
@@ -39,8 +40,15 @@ def rl_step_func_v1(cur_building, starting_time, action, person_scheduler, time_
     # Special Case: the action is already the current floor; then: progress 1 second
     cur_elev_pos = cur_building.elevators[0].position
     action_floor_height = cur_building.floor_dist * action
+
+    # number of people at action floor/current floor
+    if cur_building.floors[action].people_waiting is None:
+        num_people_action_floor = 0
+    else:
+        num_people_action_floor = len(cur_building.floors[action].people_waiting)
+
     # print(str(action_floor_height), str(cur_elev_pos))
-    if abs(action_floor_height - cur_elev_pos) < .01:
+    if abs(action_floor_height - cur_elev_pos) < .01 and num_people_action_floor == 0:
         next_spawn_time, people_to_spawn = person_scheduler.get_time_and_people_of_next_addition(
             current_timestamp=starting_time)
         if next_spawn_time > starting_time + 1:
@@ -48,6 +56,18 @@ def rl_step_func_v1(cur_building, starting_time, action, person_scheduler, time_
         else:
             person_scheduler.spawn_people(next_spawn_time, people_to_spawn)
             return next_spawn_time + .001
+    elif abs(action_floor_height - cur_elev_pos) < .01:
+        # People are waiting on the elevator and giving the same floor as an action is legitimate.
+        # This part puts the elevator into loading/unloading with 0 time elapsed, and does the loading/unloading
+        # Since this section isn't returned, the second case should catch this and finish the loading/unloading while
+        # adding people as needed
+        cur_building.elevators[0].prev_acc_dec = ElevatorMotion.NEITHER
+
+        # Run loading/unloading procedure - pop off the floor and move the people (on & off)
+        cur_building.elevators[0].load_unload(action, cur_building, time_remaining=0, time_inc=0)  # 0's aff. wait time
+
+        cur_building.elevators[0].state = ElevatorState.LOADING_UNLOADING
+        cur_building.elevators[0].time_since_beg_of_action = 0
 
     # First: implement the action: add the floor we are going to to the single elevator's queued_floors member
     cur_building.elevators[0].queued_floors.append(cur_building.floors[action])
