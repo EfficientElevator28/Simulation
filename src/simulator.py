@@ -4,6 +4,7 @@ author: Daniel Nichols
 from src.ElevatorState import ElevatorState
 from src.elevator_motion import ElevatorMotion
 
+import numpy as np
 
 def default_step_func(cur_building, dt):
     """
@@ -157,6 +158,17 @@ def reward_sum_people(cur_building):
             sum_people += len(floor.people_waiting)
     return -sum_people
 
+#Carl did this function so it might not work
+def reward_sum_wait_time(cur_building):
+    sum_time = 0
+    for e in cur_building.elevators:
+        if e.riders is not None:
+            sum_time += np.sum([p.wait_time for p in e.riders])
+    for floor in cur_building.floors:
+        if floor.people_waiting is not None:
+            sum_time += np.sum([p.wait_time for p in floor.people_waiting])
+    return -sum_time
+    
 
 class Simulator:
     """
