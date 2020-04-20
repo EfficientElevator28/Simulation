@@ -84,23 +84,28 @@ class PersonScheduler:
             })
 
     # Can be called after a simulator step to cut down on array search time (optional but much more efficient)
-    # TODO
     def update_people_spawning_min_index(self, min_index):
         self.people_spawning_min_index = min_index
 
     # Returns the absolute time and list of people (or likely one person) that will need to be spawned next
     # relative to the current_timestamp
-    def get_time_and_people_of_next_addition(self, current_timestamp):
+    # Argument update_min_index_20_less only sets the min search index by 20 since there may be copying
+    def get_time_and_people_of_next_addition(self, current_timestamp, update_min_index_20_less=False):
         # This is what needs to be accessed by the RL step function to determine when to call the ML/when to add
         # people to the system
 
         if current_timestamp > self.seconds_to_schedule:
             return -1.0, []
 
+        # Progress the search index till it reaches the time needed/requests
         search_index = self.people_spawning_min_index
         max_index = len(self.people_spawning)
         while search_index < max_index and self.people_spawning[search_index]["time"] < current_timestamp:
             search_index = search_index + 1
+
+        # If specified by update_min_index_20_less, increase the minimum searching index to help performance
+        if update_min_index_20_less:
+            self.people_spawning_min_index = max(0, search_index - 20)
 
         if search_index == max_index:
             if self.people_spawning[max_index]["time"] >= current_timestamp:
@@ -113,6 +118,7 @@ class PersonScheduler:
             # The end of the array of times/people hasn't been reached
             temp_people = []
             new_timestamp = self.people_spawning[search_index]["time"]
+            # Add all the people that are at this same timestamp (probably just 1 person, but making sure)
             while search_index <= max_index and abs(self.people_spawning[search_index]["time"] - new_timestamp) < .0001:
                 temp_people.append(Person(self.people_spawning[search_index]["starting_floor"],
                                           self.people_spawning[search_index]["dest_floor"]))
