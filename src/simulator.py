@@ -261,6 +261,26 @@ class Simulator:
 
         return self.building, states
 
+    def reset(self):
+        """
+        Only erases all the people from the simulator (in the elevators and on the floors). Clears floor button presses.
+        """
+        # Clear elevator riders
+        for elevator in self.building.elevators:
+            if elevator.riders is not None:
+                elevator.riders.clear()
+            else:
+                elevator.riders = []
+
+        # Clear floor waiting people and floor button presses
+        for floor in self.building.floors:
+            if floor.people_waiting is not None:
+                floor.people_waiting.clear()
+            else:
+                floor.people_waiting = []
+
+            floor.up_pressed = False
+            floor.down_pressed = False
 
 
 
