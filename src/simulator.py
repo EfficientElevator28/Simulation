@@ -6,6 +6,7 @@ from src.elevator_motion import ElevatorMotion
 
 import numpy as np
 
+
 def default_step_func(cur_building, dt):
     """
     DEFUNCT - A default version of the step function.
@@ -51,7 +52,7 @@ def rl_step_func_v1(cur_building, starting_time, action, person_scheduler, time_
     # print(str(action_floor_height), str(cur_elev_pos))
     if abs(action_floor_height - cur_elev_pos) < .01 and num_people_action_floor == 0:
         next_spawn_time, people_to_spawn = person_scheduler.get_time_and_people_of_next_addition(
-            current_timestamp=starting_time)
+            current_timestamp=starting_time, update_min_index_20_less=True)
         if next_spawn_time > starting_time + 1:
             return starting_time + 1
         else:
@@ -78,7 +79,7 @@ def rl_step_func_v1(cur_building, starting_time, action, person_scheduler, time_
 
     if cur_building.elevators[0].state == ElevatorState.NO_ACTION and cur_building.get_total_people_in_system() == 0:
         next_spawn_time, people_to_spawn = person_scheduler.get_time_and_people_of_next_addition(
-            current_timestamp=current_time)
+            current_timestamp=current_time, update_min_index_20_less=True)
         person_scheduler.spawn_people(next_spawn_time, people_to_spawn)
         if cur_building.elevators[0].queued_floors is not None and len(cur_building.elevators[0].queued_floors) >= 1:
             cur_building.elevators[0].queued_floors.pop(0)
@@ -90,7 +91,7 @@ def rl_step_func_v1(cur_building, starting_time, action, person_scheduler, time_
             cur_building.elevators[0].state == ElevatorState.LOADING_UNLOADING:
         # print("Running while")
         next_spawn_time, people_to_spawn = person_scheduler.get_time_and_people_of_next_addition(
-            current_timestamp=current_time)
+            current_timestamp=current_time, update_min_index_20_less=True)
         time_till_next_spawn = next_spawn_time - current_time
 
         if time_till_next_spawn < time_inc:
@@ -259,4 +260,28 @@ class Simulator:
                 states.append(0)
 
         return self.building, states
+
+    def reset(self):
+        """
+        Only erases all the people from the simulator (in the elevators and on the floors). Clears floor button presses.
+        """
+        # Clear elevator riders
+        for elevator in self.building.elevators:
+            if elevator.riders is not None:
+                elevator.riders.clear()
+            else:
+                elevator.riders = []
+
+        # Clear floor waiting people and floor button presses
+        for floor in self.building.floors:
+            if floor.people_waiting is not None:
+                floor.people_waiting.clear()
+            else:
+                floor.people_waiting = []
+
+            floor.up_pressed = False
+            floor.down_pressed = False
+
+
+
 
