@@ -149,7 +149,8 @@ def realistic_physics_step_func(cur_building, time_inc, abbr_step_option=False):
 
 
 # Default reward function -- returns -(sum # people) where # people includes those waiting for and on elevators
-def reward_sum_people(cur_building):
+def reward_sum_people(sim):
+    cur_building = sim.building
     sum_people = 0
     for e in cur_building.elevators:
         if e.riders is not None:
@@ -159,8 +160,36 @@ def reward_sum_people(cur_building):
             sum_people += len(floor.people_waiting)
     return -sum_people
 
+previous_position = 0
+def reward_sum_people_same_floor_bad(sim):
+    cur_building = sim.building
+    sum_people = 0
+    for e in cur_building.elevators:
+        if e.riders is not None:
+            sum_people += len(e.riders)
+    for floor in cur_building.floors:
+        if floor.people_waiting is not None:
+            sum_people += len(floor.people_waiting)
+    global previous_position
+    same_action = cur_building.elevators[0].position == previous_position 
+    previous_position = cur_building.elevators[0].position
+    return -sum_people - same_action * 100
+
+#Incorporate the length of the RL step - this has the opposite of intended effect don't use
+def reward_sum_people_by_time(sim): 
+    cur_building = sim.building
+    sum_people = 0
+    for e in cur_building.elevators:
+        if e.riders is not None:
+            sum_people += len(e.riders)
+    for floor in cur_building.floors:
+        if floor.people_waiting is not None:
+            sum_people += len(floor.people_waiting)
+    return -sum_people*(sim.total_time-sim.old_total_time)
+
 #Carl did this function so it might not work
-def reward_sum_wait_time(cur_building):
+def reward_sum_wait_time(sim):
+    cur_building = sim.building
     sum_time = 0
     for e in cur_building.elevators:
         if e.riders is not None:
@@ -170,6 +199,16 @@ def reward_sum_wait_time(cur_building):
             sum_time += np.sum([p.wait_time for p in floor.people_waiting])
     return -sum_time
     
+def reward_log_sum_wait_time(sim):
+    cur_building = sim.building
+    sum_time = 0
+    for e in cur_building.elevators:
+        if e.riders is not None:
+            sum_time += np.sum([p.wait_time for p in e.riders])
+    for floor in cur_building.floors:
+        if floor.people_waiting is not None:
+            sum_time += np.sum([p.wait_time for p in floor.people_waiting])
+    return -np.log(sum_time+.1)
 
 class Simulator:
     """
@@ -190,7 +229,7 @@ class Simulator:
         self.building = building
 
     def reward(self):
-        return self.reward_func(self.building)
+        return self.reward_func(self)
 
     def rl_step(self, starting_time, action, person_scheduler, time_inc=3):
         """
@@ -200,6 +239,7 @@ class Simulator:
             print('Building not initialized')
             return None
 
+        self.old_total_time = self.total_time
         self.total_time = self.rl_step_func(self.building, starting_time, action, person_scheduler, time_inc=time_inc)
 
         bld, state_list = self.get_state()
